@@ -1,0 +1,528 @@
+diff --git a/README.md b/README.md
+index eeddeed..5a53371 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,9 @@
++# Chat Application with Authentication
++
++This project is a chat application with user authentication and profile management.
++
++GitHub Repository: [https://github.com/raditself/y](https://github.com/raditself/y)
++
+ 
+ # Browser-based AI Chat Application
+ 
+@@ -31,3 +37,39 @@ This project is a browser-based AI chat application using TensorFlow.js for a cu
+ - Add real-time chat functionality using WebSockets
+ - Improve error handling and input validation
+ - Implement more secure authentication practices (e.g., password complexity requirements, email verification)
++
++
++## Features
++
++- User registration with password strength requirements
++- User login with JWT authentication
++- Protected chat interface
++- User profile management
++- Password change functionality
++
++## Setup and Installation
++
++1. Clone the repository:
++   ```
++   git clone https://github.com/raditself/y.git
++   ```
++
++2. Install dependencies:
++   ```
++   npm install
++   ```
++
++3. Start the server:
++   ```
++   node server.js
++   ```
++
++4. Open the application in your web browser at `http://localhost:3000`
++
++## API Endpoints
++
++- POST /register - Register a new user
++- POST /login - Login and receive a JWT token
++- GET /protected - Access protected route (requires authentication)
++- POST /change-password - Change user password (requires authentication)
++
+diff --git a/app.js b/app.js
+index 80c062e..983fd4a 100644
+--- a/app.js
++++ b/app.js
+@@ -1,12 +1,40 @@
+ 
++function validateUsername(username) {
++    return username.length >= 3;
++}
++
++function validatePassword(password) {
++    // Password must be at least 8 characters long and contain at least one number, one lowercase and one uppercase letter
++    const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
++    return regex.test(password);
++}
++
++function validateInput(username, password) {
++    if (!validateUsername(username)) {
++        alert('Username must be at least 3 characters long');
++        return false;
++    }
++    if (!validatePassword(password)) {
++        alert('Password must be at least 8 characters long and contain at least one number, one lowercase and one uppercase letter');
++        return false;
++    }
++    return true;
++}
++
++const API_URL = window.location.origin;
++
+ let token = null;
+ 
+ async function register() {
++    if (!validateInput(username, password)) {
++        return;
++    }
++
+     const username = document.getElementById('username').value;
+     const password = document.getElementById('password').value;
+     
+     try {
+-        const response = await fetch('http://localhost:3000/register', {
++        const response = await fetch(`${API_URL}/register`, {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+@@ -15,18 +43,27 @@ async function register() {
+         });
+         
+         const data = await response.json();
+-        console.log(data.message);
++        if (response.ok) {
++            alert(data.message || 'Registration successful');
++        } else {
++            alert(data.message || 'Registration failed');
++        }
+     } catch (error) {
+         console.error('Error:', error);
++        alert('An error occurred during registration');
+     }
+ }
+ 
+ async function login() {
++    if (!validateInput(username, password)) {
++        return;
++    }
++
+     const username = document.getElementById('username').value;
+     const password = document.getElementById('password').value;
+     
+     try {
+-        const response = await fetch('http://localhost:3000/login', {
++        const response = await fetch(`${API_URL}/login`, {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+@@ -35,13 +72,18 @@ async function login() {
+         });
+         
+         const data = await response.json();
+-        if (data.token) {
++        if (response.ok && data.token) {
+             token = data.token;
+             document.getElementById('auth-container').style.display = 'none';
+             document.getElementById('chat-container').style.display = 'block';
++            localStorage.setItem('username', username);
++            alert('Login successful');
++        } else {
++            alert(data.message || 'Login failed');
+         }
+     } catch (error) {
+         console.error('Error:', error);
++        alert('An error occurred during login');
+     }
+ }
+ 
+@@ -51,6 +93,7 @@ document.getElementById('login-btn').addEventListener('click', login);
+ 
+ // Simple custom model for demonstration purposes
+ 
++
+ async function createModel() {
+     const model = tf.sequential();
+     model.add(tf.layers.dense({units: 10, inputShape: [1], activation: 'relu'}));
+@@ -74,43 +117,6 @@ async function getAIResponse(input) {
+     return response;
+ }
+ 
+-    const model = tf.sequential();
+-    model.add(tf.layers.dense({units: 1, inputShape: [1]}));
+-    model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+-    
+-    // Train the model with some dummy data
+-    const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]);
+-    const ys = tf.tensor2d([1, 3, 5, 7], [4, 1]);
+-    await model.fit(xs, ys, {epochs: 100});
+-    
+-    return model;
+-}
+-
+-let model;
+-
+-// Initialize the model
+-createModel().then(m => {
+-    model = m;
+-    console.log('Model created');
+-});
+-
+-function addMessage(message, isUser) {
+-    const chatMessages = document.getElementById('chat-messages');
+-    const messageElement = document.createElement('div');
+-    messageElement.classList.add('message');
+-    messageElement.classList.add(isUser ? 'user-message' : 'ai-message');
+-    messageElement.textContent = message;
+-    chatMessages.appendChild(messageElement);
+-    chatMessages.scrollTop = chatMessages.scrollHeight;
+-}
+-
+-async function getAIResponse(input) {
+-    // Simple response based on the input length
+-    const inputTensor = tf.tensor2d([input.length], [1, 1]);
+-    const prediction = await model.predict(inputTensor).data();
+-    return `AI response (based on input length): ${prediction[0].toFixed(2)}`;
+-}
+-
+ 
+ async function sendMessage() {
+     const userInput = document.getElementById('user-input');
+@@ -137,20 +143,56 @@ document.getElementById('user-input').addEventListener('keypress', (e) => {
+     }
+ });
+ 
+-    const userInput = document.getElementById('user-input');
+-    const message = userInput.value.trim();
+-    
+-    if (message) {
+-        addMessage(message, true);
+-        userInput.value = '';
+-        
+-        const aiResponse = await getAIResponse(message);
+-        addMessage(aiResponse, false);
++
++function logout() {
++    token = null;
++    document.getElementById('auth-container').style.display = 'block';
++    document.getElementById('chat-container').style.display = 'none';
++    alert('Logged out successfully');
++}
++
++
++function showProfile() {
++    document.getElementById('chat-container').style.display = 'none';
++    document.getElementById('profile-container').style.display = 'block';
++    document.getElementById('profile-username').textContent = localStorage.getItem('username');
++}
++
++function showChat() {
++    document.getElementById('profile-container').style.display = 'none';
++    document.getElementById('chat-container').style.display = 'block';
++            localStorage.setItem('username', username);
++}
++
++async function changePassword() {
++    const currentPassword = document.getElementById('current-password').value;
++    const newPassword = document.getElementById('new-password').value;
++
++    if (!validatePassword(newPassword)) {
++        alert('New password does not meet the strength requirements');
++        return;
+     }
+-});
+ 
+-document.getElementById('user-input').addEventListener('keypress', (e) => {
+-    if (e.key === 'Enter') {
+-        document.getElementById('send-button').click();
++    try {
++        const response = await fetch(`${API_URL}/change-password`, {
++            method: 'POST',
++            headers: {
++                'Content-Type': 'application/json',
++                'Authorization': `Bearer ${token}`
++            },
++            body: JSON.stringify({ currentPassword, newPassword })
++        });
++
++        const data = await response.json();
++        if (response.ok) {
++            alert(data.message);
++            document.getElementById('current-password').value = '';
++            document.getElementById('new-password').value = '';
++        } else {
++            alert(data.message || 'Failed to change password');
++        }
++    } catch (error) {
++        console.error('Error:', error);
++        alert('An error occurred while changing the password');
+     }
+-});
++}
+diff --git a/index.html b/index.html
+index b3bf09c..ebeea91 100644
+--- a/index.html
++++ b/index.html
+@@ -15,7 +15,20 @@
+         <button id="register-btn">Register</button>
+         <button id="login-btn">Login</button>
+     </div>
++    
++    <div id="profile-container" style="display: none;">
++        <h2>User Profile</h2>
++        <p>Username: <span id="profile-username"></span></p>
++        <h3>Change Password</h3>
++        <input type="password" id="current-password" placeholder="Current Password">
++        <input type="password" id="new-password" placeholder="New Password">
++        <button onclick="changePassword()">Change Password</button>
++        <button onclick="showChat()">Back to Chat</button>
++    </div>
++
+     <div id="chat-container" style="display: none;">
++        <button onclick="logout()">Logout</button>
++        <button onclick="showProfile()">Profile</button>
+         <div id="chat-messages"></div>
+         <div id="input-container">
+             <input type="text" id="user-input" placeholder="Type your message...">
+diff --git a/package-lock.json b/package-lock.json
+index fa25fd6..86525a7 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -11,6 +11,7 @@
+       "dependencies": {
+         "bcryptjs": "^2.4.3",
+         "cors": "^2.8.5",
++        "dotenv": "^16.4.5",
+         "express": "^4.21.1",
+         "jsonwebtoken": "^9.0.2"
+       }
+@@ -192,6 +193,18 @@
+         "npm": "1.2.8000 || >= 1.4.16"
+       }
+     },
++    "node_modules/dotenv": {
++      "version": "16.4.5",
++      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.4.5.tgz",
++      "integrity": "sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==",
++      "license": "BSD-2-Clause",
++      "engines": {
++        "node": ">=12"
++      },
++      "funding": {
++        "url": "https://dotenvx.com"
++      }
++    },
+     "node_modules/ecdsa-sig-formatter": {
+       "version": "1.0.11",
+       "resolved": "https://registry.npmjs.org/ecdsa-sig-formatter/-/ecdsa-sig-formatter-1.0.11.tgz",
+diff --git a/package.json b/package.json
+index 6d40bf8..ed0daf8 100644
+--- a/package.json
++++ b/package.json
+@@ -12,6 +12,7 @@
+   "dependencies": {
+     "bcryptjs": "^2.4.3",
+     "cors": "^2.8.5",
++    "dotenv": "^16.4.5",
+     "express": "^4.21.1",
+     "jsonwebtoken": "^9.0.2"
+   }
+diff --git a/server.js b/server.js
+index 1722782..c58233d 100644
+--- a/server.js
++++ b/server.js
+@@ -1,4 +1,15 @@
+ 
++function validateUsername(username) {
++    return username.length >= 3;
++}
++
++function validatePassword(password) {
++    const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
++    return regex.test(password);
++}
++
++
++require('dotenv').config();
+ const express = require('express');
+ const bcrypt = require('bcryptjs');
+ const jwt = require('jsonwebtoken');
+@@ -11,51 +22,79 @@ app.use(express.json());
+ app.use(express.static(path.join(__dirname)));
+ 
+ const users = [];
+-const SECRET_KEY = 'your-secret-key';
++const SECRET_KEY = process.env.SECRET_KEY;
+ 
+-// Register route
+-app.post('/register', async (req, res) => {
++// Input validation middleware
++const validateInput = (req, res, next) => {
+     const { username, password } = req.body;
+-    
+-    // Check if user already exists
+-    if (users.find(user => user.username === username)) {
+-        return res.status(400).json({ message: 'User already exists' });
++    if (!username || !password || username.length < 3 || password.length < 6) {
++        return res.status(400).json({ message: 'Invalid input. Username must be at least 3 characters and password at least 6 characters long.' });
++    }
++    next();
++};
++
++// Register route
++app.post('/register', validateInput, async (req, res) => {
++    if (!validateUsername(req.body.username) || !validatePassword(req.body.password)) {
++        return res.status(400).json({ message: 'Invalid username or password' });
++    }
++
++    try {
++        const { username, password } = req.body;
++        
++        // Check if user already exists
++        if (users.find(user => user.username === username)) {
++            return res.status(400).json({ message: 'User already exists' });
++        }
++        
++        // Hash password
++        const hashedPassword = await bcrypt.hash(password, 10);
++        
++        // Save user
++        users.push({ username, password: hashedPassword });
++        
++        res.status(201).json({ message: 'User created successfully' });
++    } catch (error) {
++        console.error('Registration error:', error);
++        res.status(500).json({ message: 'Internal server error' });
+     }
+-    
+-    // Hash password
+-    const hashedPassword = await bcrypt.hash(password, 10);
+-    
+-    // Save user
+-    users.push({ username, password: hashedPassword });
+-    
+-    res.status(201).json({ message: 'User created successfully' });
+ });
+ 
+ // Login route
+-app.post('/login', async (req, res) => {
+-    const { username, password } = req.body;
+-    
+-    // Find user
+-    const user = users.find(user => user.username === username);
+-    if (!user) {
+-        return res.status(400).json({ message: 'Invalid credentials' });
++app.post('/login', validateInput, async (req, res) => {
++    if (!validateUsername(req.body.username) || !validatePassword(req.body.password)) {
++        return res.status(400).json({ message: 'Invalid username or password' });
+     }
+-    
+-    // Check password
+-    const isPasswordValid = await bcrypt.compare(password, user.password);
+-    if (!isPasswordValid) {
+-        return res.status(400).json({ message: 'Invalid credentials' });
++
++    try {
++        const { username, password } = req.body;
++        
++        // Find user
++        const user = users.find(user => user.username === username);
++        if (!user) {
++            return res.status(400).json({ message: 'Invalid credentials' });
++        }
++        
++        // Check password
++        const isPasswordValid = await bcrypt.compare(password, user.password);
++        if (!isPasswordValid) {
++            return res.status(400).json({ message: 'Invalid credentials' });
++        }
++        
++        // Generate token
++        const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
++        
++        res.json({ token, message: 'Login successful' });
++    } catch (error) {
++        console.error('Login error:', error);
++        res.status(500).json({ message: 'Internal server error' });
+     }
+-    
+-    // Generate token
+-    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
+-    
+-    res.json({ token });
+ });
+ 
+ // Protected route
+ app.get('/protected', (req, res) => {
+-    const token = req.headers['authorization'];
++    const authHeader = req.headers['authorization'];
++    const token = authHeader && authHeader.split(' ')[1];
+     
+     if (!token) {
+         return res.status(401).json({ message: 'No token provided' });
+@@ -77,3 +116,53 @@ app.get('*', (req, res) => {
+ 
+ const PORT = process.env.PORT || 3000;
+ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
++
++
++// Change password route
++app.post('/change-password', authenticateToken, async (req, res) => {
++    const { currentPassword, newPassword } = req.body;
++    const username = req.user.username;
++
++    // Find user
++    const user = users.find(user => user.username === username);
++    if (!user) {
++        return res.status(404).json({ message: 'User not found' });
++    }
++
++    // Check current password
++    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
++    if (!isPasswordValid) {
++        return res.status(400).json({ message: 'Current password is incorrect' });
++    }
++
++    // Validate new password
++    if (!validatePassword(newPassword)) {
++        return res.status(400).json({ message: 'New password does not meet the strength requirements' });
++    }
++
++    // Hash new password
++    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
++
++    // Update user's password
++    user.password = hashedNewPassword;
++
++    res.json({ message: 'Password changed successfully' });
++});
++
++// Middleware to authenticate token
++function authenticateToken(req, res, next) {
++    const authHeader = req.headers['authorization'];
++    const token = authHeader && authHeader.split(' ')[1];
++
++    if (!token) {
++        return res.status(401).json({ message: 'No token provided' });
++    }
++
++    jwt.verify(token, SECRET_KEY, (err, user) => {
++        if (err) {
++            return res.status(403).json({ message: 'Invalid token' });
++        }
++        req.user = user;
++        next();
++    });
++}
