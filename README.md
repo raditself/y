@@ -1,63 +1,27 @@
-# AI Chatbot Application with LlamaGPT Integration
+# LlamaGPT Integration
 
-This project integrates LlamaGPT with a Next.js application for deployment on Vercel, providing an interactive chat interface where users can communicate with an AI model.
+This project integrates LlamaGPT with a Next.js application for deployment on Vercel, providing an interactive chat interface.
 
-## Features
+## Deployment Instructions
 
-- Enhanced UI with responsive design
-- Support for text messages, file uploads, and voice input
-- Real-time updates using WebSockets
-- User preferences (theme selection and message history limit)
-- LlamaGPT model integration
-- Message persistence using local storage
-- Error handling for AI model responses
+1. Fork this repository to your GitHub account.
+2. Sign up for a Vercel account if you haven't already.
+3. In Vercel, create a new project and link it to your forked GitHub repository.
+4. In the Vercel project settings, add the following environment variable:
+   - LLAMA_GPT_API_URL: The URL of your LlamaGPT API
+5. Deploy the project.
 
-## Setup
+Note: Ensure that your LlamaGPT API is accessible from the Vercel deployment.
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/raditself/y.git
-   cd y
-   ```
+## Local Development
+
+1. Clone the repository
 2. Install dependencies: `npm install`
-3. Set up environment variables:
-   - Create a `.env.local` file with `LLAMA_GPT_API_URL=http://your-llama-gpt-api-url`
-   - Add the following secrets to your GitHub repository:
-     - VERCEL_TOKEN
-     - VERCEL_ORG_ID
-     - VERCEL_PROJECT_ID
-4. Push changes to the `main` branch to trigger automatic deployment to Vercel
+3. Create a `.env.local` file in the root directory with:
+   LLAMA_GPT_API_URL=https://your-llama-gpt-api-url.com
+4. Run the development server: `npm run dev`
+5. Open http://localhost:3000 in your browser
 
-## Development
+## Environment Variables
 
-Run the development server:
-
-```
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
-
-## Usage
-
-- Type your message in the input field and press "Send" or hit Enter to send a text message.
-- Click the paperclip icon to upload a file.
-- Click the microphone icon to use voice input (if supported by your browser).
-- Use the theme toggle to switch between light and dark modes.
-
-## Deployment
-
-The project is set up for automatic deployment to Vercel when changes are pushed to the `main` branch.
-
-## Future Improvements
-
-1. Enhance file processing capabilities for various file types.
-2. Implement user authentication and personalized chat history.
-3. Add support for rich media in chat messages (e.g., images, videos).
-4. Improve accessibility features.
-
-## Need Help?
-
-If you encounter any issues or have questions, please open an issue in this repository.
-
-Thank you for using our AI chatbot application with LlamaGPT integration. We hope you enjoy the enhanced features!
+- LLAMA_GPT_API_URL: The URL of your LlamaGPT API
