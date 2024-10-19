@@ -1,41 +1,24 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iris AI Chat</title>
+    <title>AI Chatbot</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="auth-container">
-        <h2>Authentication</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button id="register-btn">Register</button>
-        <button id="login-btn">Login</button>
-    </div>
-    
-    <div id="profile-container" style="display: none;">
-        <h2>User Profile</h2>
-        <p>Username: <span id="profile-username"></span></p>
-        <h3>Change Password</h3>
-        <input type="password" id="current-password" placeholder="Current Password">
-        <input type="password" id="new-password" placeholder="New Password">
-        <button onclick="changePassword()">Change Password</button>
-        <button onclick="showChat()">Back to Chat</button>
-    </div>
-
-    <div id="chat-container" style="display: none;">
-        <button onclick="logout()">Logout</button>
-        <button onclick="showProfile()">Profile</button>
+    <div id="chat-container">
         <div id="chat-messages"></div>
+        <div id="loading" style="display: none;">Loading...</div>
         <div id="input-container">
-            <input type="text" id="user-input" placeholder="Type your message...">
-            <button id="send-button">Send</button>
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button id="send-btn">Send</button>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
+

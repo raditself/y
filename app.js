@@ -1,99 +1,96 @@
 
-function validateUsername(username) {
-    return username.length >= 3;
-}
-
-function validatePassword(password) {
-    // Password must be at least 8 characters long and contain at least one number, one lowercase and one uppercase letter
-    const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
-    return regex.test(password);
-}
-
-function validateInput(username, password) {
-    if (!validateUsername(username)) {
-        alert('Username must be at least 3 characters long');
-        return false;
-    }
-    if (!validatePassword(password)) {
-        alert('Password must be at least 8 characters long and contain at least one number, one lowercase and one uppercase letter');
-        return false;
-    }
-    return true;
-}
 
 const API_URL = window.location.origin;
 
-let token = null;
+let messages = [];
 
-async function register() {
-    if (!validateInput(username, password)) {
-        return;
-    }
-
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
-    try {
-        const response = await fetch(`${API_URL}/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, password }),
-        });
-        
-        const data = await response.json();
-        if (response.ok) {
-            alert(data.message || 'Registration successful');
-        } else {
-            alert(data.message || 'Registration failed');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred during registration');
+// Load messages from local storage
+function loadMessages() {
+    const storedMessages = localStorage.getItem('chatMessages');
+    if (storedMessages) {
+        messages = JSON.parse(storedMessages);
+        displayMessages();
     }
 }
 
-async function login() {
-    if (!validateInput(username, password)) {
-        return;
-    }
+// Save messages to local storage
+function saveMessages() {
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
+}
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
-    try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, password }),
-        });
-        
-        const data = await response.json();
-        if (response.ok && data.token) {
-            token = data.token;
-            document.getElementById('auth-container').style.display = 'none';
-            document.getElementById('chat-container').style.display = 'block';
-            localStorage.setItem('username', username);
-            alert('Login successful');
-        } else {
-            alert(data.message || 'Login failed');
+// Display messages in the chat container
+function displayMessages() {
+    const chatContainer = document.getElementById('chat-messages');
+    chatContainer.innerHTML = '';
+    messages.forEach(message => {
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${message.sender}`;
+        messageElement.textContent = message.text;
+        chatContainer.appendChild(messageElement);
+    });
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Show loading indicator
+function showLoading() {
+    document.getElementById('loading').style.display = 'block';
+}
+
+// Hide loading indicator
+function hideLoading() {
+    document.getElementById('loading').style.display = 'none';
+}
+
+// Send message to the AI model
+async function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value.trim();
+    if (message) {
+        showLoading();
+        messages.push({ sender: 'user', text: message });
+        displayMessages();
+        messageInput.value = '';
+
+        try {
+            const response = await fetch(`${API_URL}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get response from the server');
+            }
+
+            const data = await response.json();
+            messages.push({ sender: 'ai', text: data.response });
+            displayMessages();
+            saveMessages();
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while processing your message. Please try again.');
+        } finally {
+            hideLoading();
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred during login');
     }
 }
 
-document.getElementById('register-btn').addEventListener('click', register);
-document.getElementById('login-btn').addEventListener('click', login);
+// Event listener for send button
+document.getElementById('send-btn').addEventListener('click', sendMessage);
 
+// Event listener for Enter key in message input
+document.getElementById('message-input').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+// Load messages when the page loads
+window.addEventListener('load', loadMessages);
 
 // Simple custom model for demonstration purposes
-
-
 async function createModel() {
     const model = tf.sequential();
     model.add(tf.layers.dense({units: 10, inputShape: [1], activation: 'relu'}));
@@ -109,6 +106,7 @@ async function createModel() {
     
     return model;
 }
+
 
 async function getAIResponse(input) {
     const inputTensor = tf.tensor2d([input.length], [1, 1]);
