@@ -1,27 +1,40 @@
-# LlamaGPT Integration
+# LlamaGPT Chat Application
 
-This project integrates LlamaGPT with a Next.js application for deployment on Vercel, providing an interactive chat interface.
+This is a Next.js application that integrates with LlamaGPT for an interactive chat interface.
 
 ## Deployment Instructions
 
-1. Fork this repository to your GitHub account.
-2. Sign up for a Vercel account if you haven't already.
-3. In Vercel, create a new project and link it to your forked GitHub repository.
-4. In the Vercel project settings, add the following environment variable:
+1. Ensure you have a Vercel account and have installed the Vercel CLI.
+
+2. Set up the environment variable:
    - LLAMA_GPT_API_URL: The URL of your LlamaGPT API
-5. Deploy the project.
 
-Note: Ensure that your LlamaGPT API is accessible from the Vercel deployment.
+3. Deploy the application:
+   ```
+   vercel --prod
+   ```
 
-## Local Development
+4. Follow the prompts from the Vercel CLI to complete the deployment.
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Create a `.env.local` file in the root directory with:
-   LLAMA_GPT_API_URL=https://your-llama-gpt-api-url.com
-4. Run the development server: `npm run dev`
-5. Open http://localhost:3000 in your browser
+5. Once deployed, Vercel will provide you with a URL for your application.
+
+## Development
+
+To run the application locally:
+
+1. Install dependencies:
+   ```
+   npm install
+   ```
+
+2. Start the development server:
+   ```
+   npm run dev
+   ```
+
+3. Open http://localhost:3000 in your browser.
 
 ## Environment Variables
 
-- LLAMA_GPT_API_URL: The URL of your LlamaGPT API
+- LLAMA_GPT_API_URL: Set this to the URL of your LlamaGPT API. In development, it defaults to 'http://localhost:3001' if not set.
+
