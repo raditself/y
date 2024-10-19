@@ -1,3 +1,30 @@
+# Chat Application with Authentication
+
+This project has been updated with new features, improved security, and better user experience. Please follow the instructions below to update your project and test the new functionality.
+
+## Update Instructions
+
+1. Review the following files in order:
+   - FINAL_INSTRUCTIONS.md
+   - FINAL_SUMMARY.md
+   - GITHUB_UPDATE_INSTRUCTIONS.md
+
+2. Push the changes to your GitHub repository as instructed in GITHUB_UPDATE_INSTRUCTIONS.md.
+
+3. Update your local development environment and test the new features as described in FINAL_INSTRUCTIONS.md.
+
+4. If you encounter any issues, refer to the update_instructions.md file for troubleshooting steps.
+
+## New Features
+
+- User registration with password strength requirements
+- Improved login process with better error handling
+- Protected chat interface
+- User profile management
+- Password change functionality
+
+For a detailed list of changes and improvements, please refer to the FINAL_SUMMARY.md file.
+
 
 # Important Update
 
@@ -90,4 +117,5 @@ This project is a browser-based AI chat application using TensorFlow.js for a cu
 - POST /login - Login and receive a JWT token
 - GET /protected - Access protected route (requires authentication)
 - POST /change-password - Change user password (requires authentication)
+
 
