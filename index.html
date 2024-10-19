@@ -15,7 +15,20 @@
         <button id="register-btn">Register</button>
         <button id="login-btn">Login</button>
     </div>
+    
+    <div id="profile-container" style="display: none;">
+        <h2>User Profile</h2>
+        <p>Username: <span id="profile-username"></span></p>
+        <h3>Change Password</h3>
+        <input type="password" id="current-password" placeholder="Current Password">
+        <input type="password" id="new-password" placeholder="New Password">
+        <button onclick="changePassword()">Change Password</button>
+        <button onclick="showChat()">Back to Chat</button>
+    </div>
+
     <div id="chat-container" style="display: none;">
+        <button onclick="logout()">Logout</button>
+        <button onclick="showProfile()">Profile</button>
         <div id="chat-messages"></div>
         <div id="input-container">
             <input type="text" id="user-input" placeholder="Type your message...">

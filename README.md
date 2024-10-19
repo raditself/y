@@ -1,3 +1,9 @@
+# Chat Application with Authentication
+
+This project is a chat application with user authentication and profile management.
+
+GitHub Repository: [https://github.com/raditself/y](https://github.com/raditself/y)
+
 
 # Browser-based AI Chat Application
 
@@ -31,3 +37,39 @@ This project is a browser-based AI chat application using TensorFlow.js for a cu
 - Add real-time chat functionality using WebSockets
 - Improve error handling and input validation
 - Implement more secure authentication practices (e.g., password complexity requirements, email verification)
+
+
+## Features
+
+- User registration with password strength requirements
+- User login with JWT authentication
+- Protected chat interface
+- User profile management
+- Password change functionality
+
+## Setup and Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/raditself/y.git
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   ```
+
+3. Start the server:
+   ```
+   node server.js
+   ```
+
+4. Open the application in your web browser at `http://localhost:3000`
+
+## API Endpoints
+
+- POST /register - Register a new user
+- POST /login - Login and receive a JWT token
+- GET /protected - Access protected route (requires authentication)
+- POST /change-password - Change user password (requires authentication)
+
