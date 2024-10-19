@@ -1,21 +1,25 @@
 
-
 const API_URL = window.location.origin;
 
 let messages = [];
+let userPreferences = {
+    theme: 'light',
+    messageHistoryLimit: 50
+};
 
 // Load messages from local storage
 function loadMessages() {
     const storedMessages = localStorage.getItem('chatMessages');
     if (storedMessages) {
         messages = JSON.parse(storedMessages);
+        messages = messages.slice(-userPreferences.messageHistoryLimit);
         displayMessages();
     }
 }
 
 // Save messages to local storage
 function saveMessages() {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
+    localStorage.setItem('chatMessages', JSON.stringify(messages.slice(-userPreferences.messageHistoryLimit)));
 }
 
 // Display messages in the chat container
@@ -42,53 +46,126 @@ function hideLoading() {
 }
 
 // Send message to the AI model
-async function sendMessage() {
-    const messageInput = document.getElementById('message-input');
-    const message = messageInput.value.trim();
-    if (message) {
-        showLoading();
-        messages.push({ sender: 'user', text: message });
+async function sendMessage(message, type = 'text') {
+    showLoading();
+    messages.push({ sender: 'user', text: message });
+    displayMessages();
+
+    try {
+        const response = await fetch(`${API_URL}/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message, type }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get response from the server');
+        }
+
+        const data = await response.json();
+        messages.push({ sender: 'ai', text: data.response });
         displayMessages();
-        messageInput.value = '';
+        saveMessages();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing your message. Please try again.');
+    } finally {
+        hideLoading();
+    }
+}
 
-        try {
-            const response = await fetch(`${API_URL}/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message }),
-            });
+// Handle file upload
+function handleFileUpload(file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        sendMessage(`[File uploaded: ${file.name}]`, 'file');
+    };
+    reader.readAsDataURL(file);
+}
 
-            if (!response.ok) {
-                throw new Error('Failed to get response from the server');
-            }
+// Handle voice input
+function handleVoiceInput() {
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
 
-            const data = await response.json();
-            messages.push({ sender: 'ai', text: data.response });
-            displayMessages();
-            saveMessages();
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while processing your message. Please try again.');
-        } finally {
-            hideLoading();
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('message-input').value = transcript;
+        };
+
+        recognition.start();
+    } else {
+        alert('Speech recognition is not supported in your browser.');
+    }
+}
+
+// Toggle theme
+function toggleTheme() {
+    userPreferences.theme = userPreferences.theme === 'light' ? 'dark' : 'light';
+    document.body.classList.toggle('dark-theme');
+    localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+}
+
+// Load user preferences
+function loadUserPreferences() {
+    const storedPreferences = localStorage.getItem('userPreferences');
+    if (storedPreferences) {
+        userPreferences = JSON.parse(storedPreferences);
+        if (userPreferences.theme === 'dark') {
+            document.body.classList.add('dark-theme');
         }
     }
 }
 
-// Event listener for send button
-document.getElementById('send-btn').addEventListener('click', sendMessage);
-
-// Event listener for Enter key in message input
-document.getElementById('message-input').addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
+// Event listeners
+document.getElementById('send-btn').addEventListener('click', () => {
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value.trim();
+    if (message) {
+        sendMessage(message);
+        messageInput.value = '';
     }
 });
 
-// Load messages when the page loads
-window.addEventListener('load', loadMessages);
+document.getElementById('message-input').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('send-btn').click();
+    }
+});
+
+document.getElementById('file-btn').addEventListener('click', () => {
+    document.getElementById('file-input').click();
+});
+
+document.getElementById('file-input').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        handleFileUpload(file);
+    }
+});
+
+document.getElementById('voice-btn').addEventListener('click', handleVoiceInput);
+
+// Load messages and user preferences when the page loads
+window.addEventListener('load', () => {
+    loadUserPreferences();
+    loadMessages();
+});
+
+// WebSocket connection
+const socket = new WebSocket(`ws://${window.location.host}`);
+
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    messages.push({ sender: 'ai', text: data.message });
+    displayMessages();
+    saveMessages();
+};
 
 // Simple custom model for demonstration purposes
 async function createModel() {
@@ -105,92 +182,4 @@ async function createModel() {
     }});
     
     return model;
-}
-
-
-async function getAIResponse(input) {
-    const inputTensor = tf.tensor2d([input.length], [1, 1]);
-    const prediction = await model.predict(inputTensor).data();
-    const response = `AI response: Your input length is ${input.length}, and the predicted value is ${prediction[0].toFixed(2)}`;
-    return response;
-}
-
-
-async function sendMessage() {
-    const userInput = document.getElementById('user-input');
-    const message = userInput.value.trim();
-    
-    if (message) {
-        try {
-            addMessage(message, true);
-            userInput.value = '';
-            
-            const aiResponse = await getAIResponse(message);
-            addMessage(aiResponse, false);
-        } catch (error) {
-            console.error('Error:', error);
-            addMessage('Sorry, an error occurred. Please try again.', false);
-        }
-    }
-}
-
-document.getElementById('send-button').addEventListener('click', sendMessage);
-document.getElementById('user-input').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
-
-
-function logout() {
-    token = null;
-    document.getElementById('auth-container').style.display = 'block';
-    document.getElementById('chat-container').style.display = 'none';
-    alert('Logged out successfully');
-}
-
-
-function showProfile() {
-    document.getElementById('chat-container').style.display = 'none';
-    document.getElementById('profile-container').style.display = 'block';
-    document.getElementById('profile-username').textContent = localStorage.getItem('username');
-}
-
-function showChat() {
-    document.getElementById('profile-container').style.display = 'none';
-    document.getElementById('chat-container').style.display = 'block';
-            localStorage.setItem('username', username);
-}
-
-async function changePassword() {
-    const currentPassword = document.getElementById('current-password').value;
-    const newPassword = document.getElementById('new-password').value;
-
-    if (!validatePassword(newPassword)) {
-        alert('New password does not meet the strength requirements');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/change-password`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ currentPassword, newPassword })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            alert(data.message);
-            document.getElementById('current-password').value = '';
-            document.getElementById('new-password').value = '';
-        } else {
-            alert(data.message || 'Failed to change password');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while changing the password');
-    }
 }
